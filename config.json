@@ -1,4 +1,10 @@
 {
   "server": "localhost",
-  "port": 8787
+  "port": 8787,
+  "sqlHost": "localhost",
+  "sqlPort": 5432,
+  "sqlUser": "digest_user",
+  "sqlPass": "",
+  "dbname": "digest",
+  "rssUrl": "https://g0v.news/feed"
 }

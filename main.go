@@ -1,9 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
@@ -11,8 +13,14 @@ import (
 )
 
 var config struct {
-	Server string `json:"server"`
-	Port   int    `json:"port"`
+	Server  string `json:"server"`
+	Port    int    `json:"port"`
+	SQLHost string `json:"sqlHost"`
+	SQLPort int    `json:"sqlPort"`
+	SQLUser string `json:"sqlUser"`
+	SQLPass string `json:"sqlPass"`
+	DBName  string `json:"dbname"`
+	RssUrl  string `json:"rssUrl"`
 }
 
 func main() {
@@ -25,6 +33,18 @@ func main() {
 	if err = jsonParser.Decode(&config); err != nil {
 		log.Fatal("parsing config file: ", err.Error())
 	}
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=\"%s\" dbname=%s sslmode=disable",
+		config.SQLHost, config.SQLPort, config.SQLUser,
+		config.SQLPass, config.DBName,
+	)
+
+	DB, err = sql.Open("postgres", psqlInfo)
+	if err != nil {
+		log.Fatal("connecting database: ", err.Error())
+	}
+	defer DB.Close()
 
 	router := mux.NewRouter()
 	srv := &http.Server{
