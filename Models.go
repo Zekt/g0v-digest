@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/xml"
 	_ "github.com/lib/pq"
 	"log"
 	"time"
@@ -16,6 +17,32 @@ type Article struct {
 	Url      string
 	Tags     []string
 	Html     string
+}
+
+type LineXML struct {
+	XMLName  xml.Name         `xml:"articles"`
+	UUID     string           `xml:"UUID"`
+	Time     int64            `xml:"time"`
+	Articles []LineArticleXML `xml:"article"`
+}
+
+type LineArticleXML struct {
+	Id        string  `xml:"ID"`
+	Country   string  `xml:"nativeCountry"`
+	Language  string  `xml:"language"`
+	StartTime int     `xml:"startYmdUnix"`
+	EndTime   int     `xml:"endYmdUnix"`
+	Title     string  `xml:"title"`
+	Category  string  `xml:"category"`
+	PubTime   int     `xml:"publishTimeUnix"`
+	Html      Content `xml:"contents>text>content"`
+	//Html      string `xml:"contents>text>content"`
+	Url string `xml:"sourceUrl"`
+}
+
+type Content struct {
+	XMLName xml.Name `xml:"content"`
+	Html    string   `xml:",cdata"`
 }
 
 func StoreArticle(article Article) {
@@ -56,11 +83,35 @@ func StoreArticle(article Article) {
 			log.Println(err.Error())
 		} else {
 			statement = `
-			INSERT INTO map_tag_article VALUES ($1, $2) ON CONFLICT DO NOTHING
+			INSERT INTO map_tag_article
+			VALUES ($1, $2) ON CONFLICT DO NOTHING
 			`
 			if _, err := DB.Exec(statement, tagId, articleId); err != nil {
 				log.Println(err.Error())
 			}
 		}
 	}
+}
+
+func GetNewestXML() ([]byte, error) {
+	statement := `
+	SELECT id, title, lang, extract(epoch from pubtime) :: bigint, html, url
+	FROM article ORDER BY pubtime DESC
+	`
+	var line LineArticleXML
+	r := DB.QueryRow(statement)
+	err := r.Scan(&line.Id, &line.Title, &line.Language, &line.PubTime, &line.Html.Html, &line.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	resObj := &LineXML{
+		UUID: "",
+		Time: time.Now().Unix(),
+		Articles: []LineArticleXML{
+			line,
+		},
+	}
+
+	return xml.Marshal(resObj)
 }

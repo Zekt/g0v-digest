@@ -13,7 +13,6 @@ import (
 
 func RouteMedium(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		//TODO: fetch all new Medium posts and store to DB.
 		/*
 			decoder := json.NewDecoder(req.Body)
 			var request struct {
@@ -58,6 +57,18 @@ func RouteMedium(sub *mux.Router) {
 }
 
 func RouteAPI(sub *mux.Router) {
+	sub.HandleFunc("/line", func(res http.ResponseWriter, req *http.Request) {
+		//TODO: return XML for LINE Today
+		xml, err := GetNewestXML()
+		if err != nil {
+			log.Println(err.Error())
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.Header().Set("Content-Type", "application/xml")
+		res.Write(xml)
+	})
+
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
 		//TODO: return JSON
