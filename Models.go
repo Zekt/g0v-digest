@@ -30,11 +30,11 @@ type LineArticleXML struct {
 	Id        string  `xml:"ID"`
 	Country   string  `xml:"nativeCountry"`
 	Language  string  `xml:"language"`
-	StartTime int     `xml:"startYmdUnix"`
-	EndTime   int     `xml:"endYmdUnix"`
+	StartTime int64   `xml:"startYmdUnix"`
+	EndTime   int64   `xml:"endYmdUnix"`
 	Title     string  `xml:"title"`
 	Category  string  `xml:"category"`
-	PubTime   int     `xml:"publishTimeUnix"`
+	PubTime   int64   `xml:"publishTimeUnix"`
 	Html      Content `xml:"contents>text>content"`
 	//Html      string `xml:"contents>text>content"`
 	Url string `xml:"sourceUrl"`
@@ -49,7 +49,7 @@ func StoreArticle(article Article) {
 	statement := `
 	INSERT INTO article
 	(title, lang, pubtime, html, url)
-	VALUES ($1, $2, $3, $4, $5) ON CONFLICT (url) DO NOTHING
+	VALUES ($1, $2, $3, $4, $5)
 	`
 	_, err := DB.Exec(statement,
 		article.Title,
@@ -60,6 +60,12 @@ func StoreArticle(article Article) {
 	)
 	if err != nil {
 		log.Println(err.Error())
+	} else {
+		// Renew XML if a new article inserted.
+		_, err = DB.Exec("INSERT INTO line_xml (time) VALUES ($1)", time.Now())
+		if err != nil {
+			log.Println(err.Error())
+		}
 	}
 
 	r := DB.QueryRow("SELECT id FROM article WHERE title=$1", article.Title)
@@ -94,24 +100,43 @@ func StoreArticle(article Article) {
 }
 
 func GetNewestXML() ([]byte, error) {
+	var line LineXML
+	r := DB.QueryRow(`
+	SELECT id, (extract(epoch from time)*1000)::bigint
+	FROM line_xml ORDER BY id DESC LIMIT 1
+	`)
+	if err := r.Scan(&line.UUID, &line.Time); err != nil {
+		return nil, err
+	}
+
 	statement := `
-	SELECT id, title, lang, extract(epoch from pubtime) :: bigint, html, url
-	FROM article ORDER BY pubtime DESC
+	SELECT id, title, lang, (extract(epoch from pubtime)*1000)::bigint, html, url
+	FROM article WHERE pubtime <= to_timestamp(($1)) ORDER BY pubtime DESC
 	`
-	var line LineArticleXML
-	r := DB.QueryRow(statement)
-	err := r.Scan(&line.Id, &line.Title, &line.Language, &line.PubTime, &line.Html.Html, &line.Url)
+	rs, err := DB.Query(statement, line.Time)
 	if err != nil {
 		return nil, err
 	}
 
-	resObj := &LineXML{
-		UUID: "",
-		Time: time.Now().Unix(),
-		Articles: []LineArticleXML{
-			line,
-		},
+	for rs.Next() {
+		var subxml LineArticleXML
+		err = rs.Scan(
+			&subxml.Id,
+			&subxml.Title,
+			&subxml.Language,
+			&subxml.PubTime,
+			&subxml.Html.Html,
+			&subxml.Url,
+		)
+		subxml.Country = "TW"
+		subxml.StartTime = 0
+		subxml.EndTime = 2000000000000
+		subxml.Category = "digest"
+		if err != nil {
+			log.Println(err.Error())
+		}
+		line.Articles = append(line.Articles, subxml)
 	}
 
-	return xml.Marshal(resObj)
+	return xml.Marshal(line)
 }

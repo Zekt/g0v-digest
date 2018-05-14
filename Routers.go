@@ -32,22 +32,28 @@ func RouteMedium(sub *mux.Router) {
 			log.Fatal("parsing rss: ", err.Error())
 		}
 		for _, v := range feed.Items {
-			if strings.Contains(v.Title, "週報") {
+			if StringInSlice("digest", v.Categories) || strings.Contains(v.Title, "週報") {
 				if u, err := url.Parse(v.Link); err != nil {
 					log.Println(err.Error())
 				} else {
-					u.RawQuery = ""
+					u.RawQuery = "" // Remove query string appended in Medium RSS.
 					v.Link = u.String()
 				}
 
 				article := Article{
-					Title:    v.Title,
-					Language: "zh",
-					PubTime:  *v.PublishedParsed,
-					Url:      v.Link,
-					Tags:     v.Categories,
-					Html:     v.Content,
+					Title:   v.Title,
+					PubTime: *v.PublishedParsed,
+					Url:     v.Link,
+					Tags:    v.Categories,
+					Html:    v.Content,
 				}
+
+				if StringInSlice("zh", v.Categories) {
+					article.Language = "zh"
+				} else if StringInSlice("en", v.Categories) {
+					article.Language = "en"
+				}
+
 				StoreArticle(article)
 			}
 		}

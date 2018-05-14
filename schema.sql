@@ -20,3 +20,10 @@ CREATE TABLE IF NOT EXISTS map_tag_article (
 	tagid     int,
 	articleid int
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_map_tag_article ON map_tag_article (tagid, articleid);
+
+CREATE TABLE IF NOT EXISTS line_xml (
+	id   SERIAL PRIMARY KEY,
+	time timestamp with time zone
+);
