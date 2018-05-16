@@ -111,7 +111,10 @@ func GetNewestXML() ([]byte, error) {
 
 	statement := `
 	SELECT id, title, lang, (extract(epoch from pubtime)*1000)::bigint, html, url
-	FROM article WHERE pubtime <= to_timestamp(($1)) ORDER BY pubtime DESC
+	FROM article
+	WHERE pubtime <= to_timestamp(($1))
+	AND (EXISTS (SELECT 1 FROM map_tag_article WHERE article.id=articleid AND tagid=6))
+	ORDER BY pubtime DESC
 	`
 	rs, err := DB.Query(statement, line.Time)
 	if err != nil {
