@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "encoding/json"
+	"encoding/xml"
 	// "fmt"
 	"github.com/gorilla/mux"
 	"github.com/mmcdole/gofeed"
@@ -65,14 +65,14 @@ func RouteMedium(sub *mux.Router) {
 func RouteAPI(sub *mux.Router) {
 	sub.HandleFunc("/line", func(res http.ResponseWriter, req *http.Request) {
 		//TODO: return XML for LINE Today
-		xml, err := GetNewestXML()
+		rss, err := GetNewestXML()
 		if err != nil {
 			log.Println(err.Error())
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		res.Header().Set("Content-Type", "application/xml")
-		res.Write(xml)
+		res.Write(append([]byte(xml.Header), rss...))
 	})
 
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
