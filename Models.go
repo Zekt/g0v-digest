@@ -132,7 +132,7 @@ func GetNewestXML() ([]byte, error) {
 			&subxml.Url,
 		)
 		subxml.Country = "TW"
-		subxml.StartTime = 0
+		subxml.StartTime = 1000000000000
 		subxml.EndTime = 2000000000000
 		subxml.Category = "digest"
 		if err != nil {
