@@ -12,17 +12,6 @@ import (
 	"os/signal"
 )
 
-var config struct {
-	Server  string `json:"server"`
-	Port    int    `json:"port"`
-	SQLHost string `json:"sqlHost"`
-	SQLPort int    `json:"sqlPort"`
-	SQLUser string `json:"sqlUser"`
-	SQLPass string `json:"sqlPass"`
-	DBName  string `json:"dbname"`
-	RssUrl  string `json:"rssUrl"`
-}
-
 func main() {
 	configFile, err := os.Open("config.json")
 	if err != nil {
@@ -52,10 +41,13 @@ func main() {
 		Handler: router,
 	}
 
-	mediumSub := router.PathPrefix("/medium").Methods("PUT").Subrouter()
-	apiSub := router.PathPrefix("/api").Subrouter()
-	RouteMedium(mediumSub)
-	RouteAPI(apiSub)
+	subMedium := router.PathPrefix("/medium").Methods("PUT").Subrouter().StrictSlash(true)
+	subAPI := router.PathPrefix("/api").Subrouter().StrictSlash(true)
+	subMailchimp := router.PathPrefix("/mailchimp").Subrouter().StrictSlash(true)
+
+	RouteMedium(subMedium)
+	RouteAPI(subAPI)
+	RouteMailchimp(subMailchimp)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

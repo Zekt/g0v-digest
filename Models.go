@@ -10,41 +10,6 @@ import (
 
 var DB *sql.DB
 
-type Article struct {
-	Title    string
-	Language string
-	PubTime  time.Time
-	Url      string
-	Tags     []string
-	Html     string
-}
-
-type LineXML struct {
-	XMLName  xml.Name         `xml:"articles"`
-	UUID     string           `xml:"UUID"`
-	Time     int64            `xml:"time"`
-	Articles []LineArticleXML `xml:"article"`
-}
-
-type LineArticleXML struct {
-	Id        string  `xml:"ID"`
-	Country   string  `xml:"nativeCountry"`
-	Language  string  `xml:"language"`
-	StartTime int64   `xml:"startYmdUnix"`
-	EndTime   int64   `xml:"endYmdUnix"`
-	Title     string  `xml:"title"`
-	Category  string  `xml:"category"`
-	PubTime   int64   `xml:"publishTimeUnix"`
-	Html      Content `xml:"contents>text>content"`
-	//Html      string `xml:"contents>text>content"`
-	Url string `xml:"sourceUrl"`
-}
-
-type Content struct {
-	XMLName xml.Name `xml:"content"`
-	Html    string   `xml:",cdata"`
-}
-
 func StoreArticle(article Article) {
 	statement := `
 	INSERT INTO article
@@ -97,6 +62,15 @@ func StoreArticle(article Article) {
 			}
 		}
 	}
+}
+
+func GetArticle() (string, error) {
+	var html string
+	r := DB.QueryRow("SELECT html FROM article DESC LIMIT 1")
+	if err := r.Scan(&html); err != nil {
+		return "", err
+	}
+	return html, nil
 }
 
 func GetNewestXML() ([]byte, error) {
