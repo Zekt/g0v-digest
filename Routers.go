@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	// "fmt"
+	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/mmcdole/gofeed"
@@ -66,7 +67,7 @@ func RouteMedium(sub *mux.Router) {
 
 func RouteAPI(sub *mux.Router) {
 	sub.HandleFunc("/line", func(res http.ResponseWriter, req *http.Request) {
-		//TODO: return XML for LINE Today
+		// Retuen XML for LINE Today
 		rss, err := GetNewestXML()
 		if err != nil {
 			log.Println(err.Error())
@@ -78,7 +79,7 @@ func RouteAPI(sub *mux.Router) {
 	})
 
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
+		res.WriteHeader(http.StatusNotFound)
 		//TODO: return JSON
 	})
 }
@@ -86,31 +87,63 @@ func RouteAPI(sub *mux.Router) {
 func RouteMailchimp(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		client := &http.Client{}
-		reqM, err := RequestMailchimp("GET", "/campaigns/67220468a3/content")
+		var reqJson struct {
+			html string
+		}
+		html, err := GetArticle()
 		if err != nil {
-			log.Println("Making request to Mailchimp: ", err.Error())
+			log.Println("Querying latest article: ", err.Error())
 			return
 		}
+		reqJson.html = html
+		jsonM, err := json.Marshal(reqJson)
+		if err != nil {
+			log.Println("Marshalling json: ", err.Error())
+		}
+		reqM, err := http.NewRequest(
+			"PUT",
+			config.ApiUrl+"/campaigns/"+config.CampId+"/content",
+			bytes.NewReader(jsonM),
+		)
+		if err != nil {
+			log.Println("Making a request to Mailchimp: ", err.Error())
+			return
+		}
+		reqM.Header.Set("Authorization", "Basic "+config.ApiKey)
+		reqM.Header.Set("Content-Type", "application/json")
 		resM, err := client.Do(reqM)
 		if err != nil {
-			log.Println("Sending Mailchinp request", err.Error())
+			log.Println("Sending Mailchimp request:", err.Error())
 			return
 		}
-		text, err := ioutil.ReadAll(resM.Body)
-		if err != nil {
-			log.Println("Reading Mailchimp response", err.Error())
+		if resM.StatusCode != http.StatusOK {
+			errMsg, err := ioutil.ReadAll(resM.Body)
+			if err != nil {
+				log.Println("Error reading response body: ", err.Error())
+			} else {
+				log.Println("Getting Mailchimp status: ", resM.Status)
+				log.Println("Getting Mailchimp response: \n", string(errMsg))
+			}
+			res.Write([]byte("Something went wrong! Writting Mailchimp content failed."))
 			return
 		}
-		var response struct {
-			Html string `json:html`
-		}
-		err = json.Unmarshal(text, &response)
-		log.Println(string(response.Html))
-		if err != nil {
-			log.Println("Parsing Mailchimp json", err.Error())
-			return
-		}
+		/*
+			text, err := ioutil.ReadAll(resM.Body)
+			if err != nil {
+				log.Println("Reading Mailchimp response", err.Error())
+				return
+			}
+			var response struct {
+				Html string `json:html`
+			}
+			err = json.Unmarshal(text, &response)
+			log.Println(string(response.Html))
+			if err != nil {
+				log.Println("Parsing Mailchimp json", err.Error())
+				return
+			}
+		*/
 
-		res.Write([]byte(response.Html))
+		res.Write([]byte("Mailchimp content updated."))
 	})
 }

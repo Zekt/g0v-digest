@@ -66,7 +66,7 @@ func StoreArticle(article Article) {
 
 func GetArticle() (string, error) {
 	var html string
-	r := DB.QueryRow("SELECT html FROM article DESC LIMIT 1")
+	r := DB.QueryRow("SELECT html FROM article ORDER BY pubtime DESC LIMIT 1")
 	if err := r.Scan(&html); err != nil {
 		return "", err
 	}

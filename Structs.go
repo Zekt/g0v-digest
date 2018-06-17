@@ -14,6 +14,7 @@ var config struct {
 	SQLPass string `json:"sqlPass"`
 	DBName  string `json:"dbname"`
 	RssUrl  string `json:"rssUrl"`
+	CampId  string `json:"campaignId"`
 	ApiUrl  string `json:"mailchimpUrl"`
 	ApiKey  string `json:"apiKey"`
 }
