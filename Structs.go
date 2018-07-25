@@ -39,8 +39,8 @@ type LineArticleXML struct {
 	Id        string  `xml:"ID"`
 	Country   string  `xml:"nativeCountry"`
 	Language  string  `xml:"language"`
-	StartTime int64   `xml:"startYmdUnix"`
-	EndTime   int64   `xml:"endYmdUnix"`
+	StartTime int64   `xml:"startYmdtUnix"`
+	EndTime   int64   `xml:"endYmdtUnix"`
 	Title     string  `xml:"title"`
 	Category  string  `xml:"category"`
 	PubTime   int64   `xml:"publishTimeUnix"`
