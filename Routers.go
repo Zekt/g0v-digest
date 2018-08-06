@@ -97,14 +97,15 @@ func RouteMailchimp(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		client := &http.Client{}
 		var reqJson struct {
-			html string
+			Html string `json:"html"`
 		}
 		html, err := GetArticle()
+		//log.Println(html)
 		if err != nil {
 			log.Println("Querying latest article: ", err.Error())
 			return
 		}
-		reqJson.html = html
+		reqJson.Html = html
 		jsonM, err := json.Marshal(reqJson)
 		if err != nil {
 			log.Println("Marshalling json: ", err.Error())
@@ -119,7 +120,8 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 		reqM.Header.Set("Authorization", "Basic "+config.ApiKey)
-		reqM.Header.Set("Content-Type", "application/json")
+		reqM.Header.Set("content-type", "application/json")
+		reqM.SetBasicAuth("anystring", config.ApiKey)
 		resM, err := client.Do(reqM)
 		if err != nil {
 			log.Println("Sending Mailchimp request:", err.Error())
