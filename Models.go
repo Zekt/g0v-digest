@@ -117,3 +117,12 @@ func GetNewestXML() ([]byte, error) {
 
 	return xml.Marshal(line)
 }
+
+func UpdateXmlUuid() error {
+	_, err := DB.Exec("INSERT INTO line_xml (time) VALUES ($1)", time.Now())
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
+}

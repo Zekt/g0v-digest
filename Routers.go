@@ -66,13 +66,22 @@ func RouteMedium(sub *mux.Router) {
 }
 
 func RouteAPI(sub *mux.Router) {
+	sub.PathPrefix("/line/tick").Methods("PUT").HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		err := UpdateXmlUuid()
+		if err != nil {
+			log.Println("Updating id error:", err.Error())
+			res.Write([]byte("Update failed!"))
+		} else {
+			res.Write([]byte("Update done."))
+		}
+	})
 	sub.HandleFunc("/line", func(res http.ResponseWriter, req *http.Request) {
 		// Retuen XML for LINE Today
 		rss, err := GetNewestXML()
 		if err != nil {
 			log.Println(err.Error())
 			res.WriteHeader(http.StatusBadRequest)
-			return
+
 		}
 		res.Header().Set("Content-Type", "application/xml")
 		res.Write(append([]byte(xml.Header), rss...))
