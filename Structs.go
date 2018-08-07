@@ -15,6 +15,7 @@ var config struct {
 	DBName  string `json:"dbname"`
 	RssUrl  string `json:"rssUrl"`
 	CampId  string `json:"campaignId"`
+	ListId  string `json:"listId"`
 	ApiUrl  string `json:"mailchimpUrl"`
 	ApiKey  string `json:"apiKey"`
 }
@@ -26,6 +27,11 @@ type Article struct {
 	Url      string
 	Tags     []string
 	Html     string
+}
+
+type Campaign struct {
+	Type   string `json:"type"`
+	ListId string `json:"recipients>list_id"`
 }
 
 type LineXML struct {

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/xml"
 	// "fmt"
-	"bytes"
+	// "bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/mmcdole/gofeed"
@@ -106,22 +106,61 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 		reqJson.Html = html
-		jsonM, err := json.Marshal(reqJson)
+		jsonBytes, err := json.Marshal(reqJson)
 		if err != nil {
 			log.Println("Marshalling json: ", err.Error())
+			return
 		}
-		reqM, err := http.NewRequest(
-			"PUT",
-			config.ApiUrl+"/campaigns/"+config.CampId+"/content",
-			bytes.NewReader(jsonM),
-		)
+
+		// POST to creat a new campaign and get that campaign ID.
+
+		reqCamp, err := NewCampaignRequest("Test title?", config.ListId)
+		if err != nil {
+			log.Println("Building request to create new campaign: ", err.Error())
+			return
+		}
+		resCamp, err := client.Do(reqCamp)
+		if err != nil {
+			log.Println("Making request to create new campaign: ", err.Error())
+			return
+		}
+		var camp struct {
+			ID string `json:"id"`
+		}
+		resBody, err := ioutil.ReadAll(resCamp.Body)
+		if err != nil {
+			log.Println("Reading Mailchimp response to creating new campaign: ", err.Error())
+			return
+		}
+
+		err = json.Unmarshal(resBody, &camp)
+		if err != nil {
+			log.Println("Parsing Mailchimp response in JSON: ", err.Error())
+			return
+		}
+
+		// Update that Mailchimp campaign based on ID.
+
+		// reqM, err := NewMailchimpRequest("PUT", "/campaigns/"+config.CampId+"/content", jsonBytes) -- to be deleted
+		reqM, err := NewMailchimpRequest("PUT", "/campaigns/"+camp.ID+"/content", jsonBytes)
+		/*
+			reqM, err := http.NewRequest(
+				"PUT",
+				config.ApiUrl+"/campaigns/"+config.CampId+"/content",
+				bytes.NewReader(jsonM),
+			)
+			if err != nil {
+				log.Println("Making a request to Mailchimp: ", err.Error())
+				return
+			}
+			reqM.Header.Set("Authorization", "Basic "+config.ApiKey)
+			reqM.Header.Set("content-type", "application/json")
+			reqM.SetBasicAuth("anystring", config.ApiKey)
+		*/
 		if err != nil {
 			log.Println("Making a request to Mailchimp: ", err.Error())
 			return
 		}
-		reqM.Header.Set("Authorization", "Basic "+config.ApiKey)
-		reqM.Header.Set("content-type", "application/json")
-		reqM.SetBasicAuth("anystring", config.ApiKey)
 		resM, err := client.Do(reqM)
 		if err != nil {
 			log.Println("Sending Mailchimp request:", err.Error())
