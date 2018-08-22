@@ -99,13 +99,13 @@ func RouteMailchimp(sub *mux.Router) {
 		var reqJson struct {
 			Html string `json:"html"`
 		}
-		html, err := GetArticle()
+		article, err := GetArticle()
 		//log.Println(html)
 		if err != nil {
 			log.Println("Querying latest article: ", err.Error())
 			return
 		}
-		reqJson.Html = html
+		reqJson.Html = article.Html
 		jsonBytes, err := json.Marshal(reqJson)
 		if err != nil {
 			log.Println("Marshalling json: ", err.Error())
@@ -114,7 +114,7 @@ func RouteMailchimp(sub *mux.Router) {
 
 		// POST to creat a new campaign and get that campaign ID.
 
-		reqCamp, err := NewCampaignRequest("Test title?", config.ListId)
+		reqCamp, err := NewCampaignRequest(article.Title, config.ListId)
 		if err != nil {
 			log.Println("Building request to create new campaign: ", err.Error())
 			return

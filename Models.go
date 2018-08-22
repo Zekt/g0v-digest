@@ -64,13 +64,23 @@ func StoreArticle(article Article) {
 	}
 }
 
-func GetArticle() (string, error) {
-	var html string
-	r := DB.QueryRow("SELECT html FROM article ORDER BY pubtime DESC LIMIT 1")
-	if err := r.Scan(&html); err != nil {
-		return "", err
-	}
-	return html, nil
+func GetArticle() (Article, error) {
+	var article Article
+	statement := `
+	SELECT title, lang, (extract(epoch from pubtime)*1000)::bigint, html, url
+	FROM article
+	AND lang='zh'
+	ORDER BY pubtime DESC
+	`
+	r := DB.QueryRow(statement)
+	err := r.Scan(
+		&article.Title,
+		&article.Language,
+		&article.PubTime,
+		&article.Html,
+		&article.Url,
+	)
+	return article, err
 }
 
 func GetNewestXML() ([]byte, error) {
