@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/PuerkitoBio/goquery"
+	"io"
+	"log"
 	"net/http"
 )
 
@@ -25,23 +28,53 @@ func NewMailchimpRequest(methods string, resource string, body []byte) (*http.Re
 	return req, err
 }
 
-func NewCampaignRequest(title string, listId string) (*http.Request, error) {
-	type Campaign struct {
-		Type   string `json:"type"`
-		ListId string `json:"recipients>list_id"`
-		Title  string `json:"settings>title"`
-	}
-	camp := Campaign{
-		Type:   "regular",
-		ListId: listId,
-		Title:  title,
+func NewCampaignRequest(title string) (*http.Request, error) {
+	var campaign struct {
+		Type       string `json:"type"`
+		Recipients struct {
+			ListId string `json:"list_id"`
+		} `json:"recipients"`
+		Settings struct {
+			Subject string `json:"subject_line"`
+			Title   string `json:"title"`
+			TempId  int    `json:"template_id"`
+		} `json:"settings"`
 	}
 
-	jsonBytes, err := json.Marshal(camp)
+	campaign.Type = "regular"
+	campaign.Recipients.ListId = config.ListId
+	campaign.Settings.Subject = title
+	campaign.Settings.Title = title
+	campaign.Settings.TempId = config.TempId
+
+	jsonBytes, err := json.Marshal(campaign)
 	if err != nil {
 		return nil, err
 	}
 	req, err := NewMailchimpRequest("POST", "/campaigns", jsonBytes)
 
 	return req, err
+}
+
+func Parse(source io.Reader) (SplitedArticle, error) {
+	doc, err := goquery.NewDocumentFromReader(source)
+	if err != nil {
+		log.Println("Parsing html: ", err.Error())
+	}
+
+	var digest SplitedArticle
+
+	nodes := doc.Find("h3")
+	nodes.Each(func(index int, node *goquery.Selection) {
+		h3, err := node.Html()
+		imgSrc := node.Next().Children().AttrOr("src", "")
+		p, err := node.Next().Next().Html()
+		if err != nil {
+			log.Println("Reading HTML: ", err.Error())
+			return
+		}
+		digest.Digests = append(digest.Digests, struct{ title, img, content string }{h3, imgSrc, p})
+		//log.Println(node.Next().Next().Html())
+	})
+	return digest, err
 }

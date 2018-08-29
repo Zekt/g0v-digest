@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -97,15 +98,34 @@ func RouteMailchimp(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		client := &http.Client{}
 		var reqJson struct {
-			Html string `json:"html"`
+			Template struct {
+				ID       int               `json:"id"`
+				Sections map[string]string `json:"sections"`
+			} `json:"template"`
 		}
+
+		sections := make(map[string]string)
+
 		article, err := GetArticle()
-		//log.Println(html)
 		if err != nil {
 			log.Println("Querying latest article: ", err.Error())
 			return
 		}
-		reqJson.Html = article.Html
+		parsedArticle, err := Parse(strings.NewReader(article.Html))
+		if err != nil {
+			log.Println("Parsing error")
+			return
+		}
+
+		for i, v := range parsedArticle.Digests {
+			s := strconv.Itoa(i + 1)
+			sections["title"+s] = v.title
+			sections["content"+s] = v.content
+		}
+
+		reqJson.Template.ID = config.TempId
+		reqJson.Template.Sections = sections
+
 		jsonBytes, err := json.Marshal(reqJson)
 		if err != nil {
 			log.Println("Marshalling json: ", err.Error())
@@ -113,8 +133,7 @@ func RouteMailchimp(sub *mux.Router) {
 		}
 
 		// POST to creat a new campaign and get that campaign ID.
-
-		reqCamp, err := NewCampaignRequest(article.Title, config.ListId)
+		reqCamp, err := NewCampaignRequest(article.Title)
 		if err != nil {
 			log.Println("Building request to create new campaign: ", err.Error())
 			return

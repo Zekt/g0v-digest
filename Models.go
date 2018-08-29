@@ -67,16 +67,15 @@ func StoreArticle(article Article) {
 func GetArticle() (Article, error) {
 	var article Article
 	statement := `
-	SELECT title, lang, (extract(epoch from pubtime)*1000)::bigint, html, url
+	SELECT title, lang, html, url
 	FROM article
-	AND lang='zh'
+	WHERE lang='zh'
 	ORDER BY pubtime DESC
 	`
 	r := DB.QueryRow(statement)
 	err := r.Scan(
 		&article.Title,
 		&article.Language,
-		&article.PubTime,
 		&article.Html,
 		&article.Url,
 	)

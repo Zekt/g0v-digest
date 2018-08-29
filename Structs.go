@@ -15,6 +15,7 @@ var config struct {
 	DBName  string `json:"dbname"`
 	RssUrl  string `json:"rssUrl"`
 	CampId  string `json:"campaignId"`
+	TempId  int    `json:"templateId"`
 	ListId  string `json:"listId"`
 	ApiUrl  string `json:"mailchimpUrl"`
 	ApiKey  string `json:"apiKey"`
@@ -27,6 +28,11 @@ type Article struct {
 	Url      string
 	Tags     []string
 	Html     string
+}
+
+type SplitedArticle struct {
+	Digests []struct{ title, img, content string }
+	Remains string
 }
 
 type Campaign struct {
