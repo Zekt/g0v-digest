@@ -31,7 +31,7 @@ type Article struct {
 }
 
 type SplitedArticle struct {
-	Digests []struct{ title, img, content string }
+	Digests []struct{ title, pos, img, content string }
 	Remains string
 }
 

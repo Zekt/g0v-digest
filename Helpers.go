@@ -35,9 +35,11 @@ func NewCampaignRequest(title string) (*http.Request, error) {
 			ListId string `json:"list_id"`
 		} `json:"recipients"`
 		Settings struct {
-			Subject string `json:"subject_line"`
-			Title   string `json:"title"`
-			TempId  int    `json:"template_id"`
+			Subject  string `json:"subject_line"`
+			Title    string `json:"title"`
+			FromName string `json:"from_name"`
+			ReplyTo  string `json:"reply_to"`
+			TempId   int    `json:"template_id"`
 		} `json:"settings"`
 	}
 
@@ -45,6 +47,8 @@ func NewCampaignRequest(title string) (*http.Request, error) {
 	campaign.Recipients.ListId = config.ListId
 	campaign.Settings.Subject = title
 	campaign.Settings.Title = title
+	campaign.Settings.FromName = "g0v.news 團隊"
+	campaign.Settings.ReplyTo = "g0v.news@ocf.tw"
 	campaign.Settings.TempId = config.TempId
 
 	jsonBytes, err := json.Marshal(campaign)
@@ -66,15 +70,34 @@ func Parse(source io.Reader) (SplitedArticle, error) {
 
 	nodes := doc.Find("h3")
 	nodes.Each(func(index int, node *goquery.Selection) {
-		h3, err := node.Html()
+		h3, err := node.Children().Children().Html()
 		imgSrc := node.Next().Children().AttrOr("src", "")
 		p, err := node.Next().Next().Html()
 		if err != nil {
 			log.Println("Reading HTML: ", err.Error())
 			return
 		}
-		digest.Digests = append(digest.Digests, struct{ title, img, content string }{h3, imgSrc, p})
-		//log.Println(node.Next().Next().Html())
+		digest.Digests = append(digest.Digests, struct{ title, pos, img, content string }{h3, "", imgSrc, p})
 	})
 	return digest, err
+}
+
+func Scrap(source io.Reader, target *SplitedArticle) {
+	doc, err := goquery.NewDocumentFromReader(source)
+	if err != nil {
+		log.Println("Parsing Medium html: ", err.Error())
+		return
+	}
+
+	h3s := doc.Find("h3")
+	for i, v := range target.Digests {
+		prevName := h3s.FilterFunction(func(_ int, sel *goquery.Selection) bool {
+			h, err := sel.Children().Children().Html()
+			if err != nil {
+				log.Println("Failed to read HTML: ", err.Error())
+			}
+			return h == v.title
+		}).Prev().AttrOr("name", "")
+		target.Digests[i].pos = prevName
+	}
 }

@@ -14,6 +14,6 @@ PUT `/medium` - Check g0v.news feed for update and write to database.
 
 GET `/api/line` - XML RSS for LINE Today.
 
-PUT `/api/line/tick` - Update the UUID of XML.
+PUT `/api/line/tick` - Update the UUID of the XML.
 
-PUT `/mailchimp` - Set up a new campaign with the newest post in database.
+PUT `/mailchimp` - Set up a new campaign with the most recent post in database.

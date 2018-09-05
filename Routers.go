@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/xml"
-	// "fmt"
+	"fmt"
 	// "bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -17,19 +17,6 @@ import (
 
 func RouteMedium(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		/*
-			decoder := json.NewDecoder(req.Body)
-			var request struct {
-				Title       string `json:"title"`
-				Url         string `json:"url"`
-				PublishedAt string `json:"publishedAt"`
-			}
-			if err := decoder.Decode(&request); err != nil {
-				log.Print("decoding request json: ", err.Error())
-				res.WriteHeader(http.StatusBadRequest)
-			}
-		*/
-
 		fp := gofeed.NewParser()
 		feed, err := fp.ParseURL(config.RssUrl)
 		if err != nil {
@@ -117,9 +104,26 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 
+		reqMedium, err := http.NewRequest("GET", article.Url, nil)
+		if err != nil {
+			log.Println("Building request to Medium failed: ", err.Error())
+			return
+		}
+
+		resMedium, err := client.Do(reqMedium)
+		if err != nil {
+			log.Println("Making request to Medium failed: ", err.Error())
+			return
+		}
+
+		Scrap(resMedium.Body, &parsedArticle)
+
+		t := article.PubTime
+		sections["date"] = fmt.Sprintf("%s %d WEEKLY NEWS", t.Month().String()[:3], t.Day())
+		sections["link"] = fmt.Sprintf("<a href=\"%s\">%s</a>", article.Url, "一 週 公 民 科 技 焦 點")
 		for i, v := range parsedArticle.Digests {
 			s := strconv.Itoa(i + 1)
-			sections["title"+s] = v.title
+			sections["title"+s] = fmt.Sprintf("<a href=\"%s#%s\">%s</a>", article.Url, v.pos, v.title)
 			sections["content"+s] = v.content
 		}
 
@@ -159,28 +163,12 @@ func RouteMailchimp(sub *mux.Router) {
 		}
 
 		// Update that Mailchimp campaign based on ID.
-
-		// reqM, err := NewMailchimpRequest("PUT", "/campaigns/"+config.CampId+"/content", jsonBytes) -- to be deleted
-		reqM, err := NewMailchimpRequest("PUT", "/campaigns/"+camp.ID+"/content", jsonBytes)
-		/*
-			reqM, err := http.NewRequest(
-				"PUT",
-				config.ApiUrl+"/campaigns/"+config.CampId+"/content",
-				bytes.NewReader(jsonM),
-			)
-			if err != nil {
-				log.Println("Making a request to Mailchimp: ", err.Error())
-				return
-			}
-			reqM.Header.Set("Authorization", "Basic "+config.ApiKey)
-			reqM.Header.Set("content-type", "application/json")
-			reqM.SetBasicAuth("anystring", config.ApiKey)
-		*/
+		reqMC, err := NewMailchimpRequest("PUT", "/campaigns/"+camp.ID+"/content", jsonBytes)
 		if err != nil {
 			log.Println("Making a request to Mailchimp: ", err.Error())
 			return
 		}
-		resM, err := client.Do(reqM)
+		resM, err := client.Do(reqMC)
 		if err != nil {
 			log.Println("Sending Mailchimp request:", err.Error())
 			return
@@ -196,22 +184,6 @@ func RouteMailchimp(sub *mux.Router) {
 			res.Write([]byte("Something went wrong! Writting Mailchimp content failed."))
 			return
 		}
-		/*
-			text, err := ioutil.ReadAll(resM.Body)
-			if err != nil {
-				log.Println("Reading Mailchimp response", err.Error())
-				return
-			}
-			var response struct {
-				Html string `json:html`
-			}
-			err = json.Unmarshal(text, &response)
-			log.Println(string(response.Html))
-			if err != nil {
-				log.Println("Parsing Mailchimp json", err.Error())
-				return
-			}
-		*/
 
 		res.Write([]byte("Mailchimp content updated."))
 	})

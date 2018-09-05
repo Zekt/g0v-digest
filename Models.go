@@ -67,7 +67,7 @@ func StoreArticle(article Article) {
 func GetArticle() (Article, error) {
 	var article Article
 	statement := `
-	SELECT title, lang, html, url
+	SELECT title, pubtime, lang, html, url
 	FROM article
 	WHERE lang='zh'
 	ORDER BY pubtime DESC
@@ -75,6 +75,7 @@ func GetArticle() (Article, error) {
 	r := DB.QueryRow(statement)
 	err := r.Scan(
 		&article.Title,
+		&article.PubTime,
 		&article.Language,
 		&article.Html,
 		&article.Url,
