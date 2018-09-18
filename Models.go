@@ -10,7 +10,7 @@ import (
 
 var DB *sql.DB
 
-func StoreArticle(article Article) {
+func StoreArticle(article Article, callback func()) {
 	statement := `
 	INSERT INTO article
 	(title, lang, pubtime, html, url)
@@ -31,6 +31,7 @@ func StoreArticle(article Article) {
 		if err != nil {
 			log.Println(err.Error())
 		}
+		defer callback()
 	}
 
 	r := DB.QueryRow("SELECT id FROM article WHERE title=$1", article.Title)

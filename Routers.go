@@ -17,6 +17,7 @@ import (
 
 func RouteMedium(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		resMessage := "Done parsing from Medium."
 		fp := gofeed.NewParser()
 		feed, err := fp.ParseURL(config.RssUrl)
 		if err != nil {
@@ -45,11 +46,28 @@ func RouteMedium(sub *mux.Router) {
 					article.Language = "en"
 				}
 
-				StoreArticle(article)
+				StoreArticle(article, func() {
+					client := &http.Client{}
+					req, err := http.NewRequest(
+						"PUT",
+						fmt.Sprintf("http://%s:%d/mailchimp", config.Server, config.Port),
+						nil,
+					)
+					if err != nil {
+						log.Println("Building request to Mailchimp on update from Medium: ", err.Error())
+						return
+					}
+					_, err = client.Do(req)
+					if err != nil {
+						log.Println("Sending request to Mailchimp on update from Medium: ", err.Error())
+						return
+					}
+					resMessage += "\nMailchimp content updated."
+				})
 			}
 		}
 
-		res.Write([]byte("Parse done."))
+		res.Write([]byte(resMessage))
 	})
 }
 
