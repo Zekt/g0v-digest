@@ -60,7 +60,7 @@ func NewCampaignRequest(title string) (*http.Request, error) {
 	return req, err
 }
 
-func Parse(source io.Reader) (SplitedArticle, error) {
+func Parse(source io.Reader, lang string) (SplitedArticle, error) {
 	doc, err := goquery.NewDocumentFromReader(source)
 	if err != nil {
 		log.Println("Parsing html: ", err.Error())
@@ -68,33 +68,50 @@ func Parse(source io.Reader) (SplitedArticle, error) {
 
 	var digest SplitedArticle
 
-	nodes := doc.Find("h3")
+	var nodes *goquery.Selection
+	if lang == "en" {
+		nodes = doc.Find("h4").Slice(1, 5)
+	} else {
+		nodes = doc.Find("h3")
+	}
 	nodes.Each(func(index int, node *goquery.Selection) {
-		h3, err := node.Children().Children().Html()
+		title, err := node.Children().Children().Html()
+		if title == "" || err != nil {
+			title, err = node.Children().Html()
+			if err != nil {
+				log.Println("Reading "+lang+" RSS HTML: ", err.Error())
+				return
+			}
+		}
 		imgSrc := node.Next().Children().AttrOr("src", "")
 		p, err := node.Next().Next().Html()
 		if err != nil {
-			log.Println("Reading HTML: ", err.Error())
+			log.Println("Reading "+lang+" RSS HTML: ", err.Error())
 			return
 		}
-		digest.Digests = append(digest.Digests, struct{ title, pos, img, content string }{h3, "", imgSrc, p})
+		digest.Digests = append(digest.Digests, struct{ title, pos, img, content string }{title, "", imgSrc, p})
 	})
 	return digest, err
 }
 
-func Scrap(source io.Reader, target *SplitedArticle) {
+func Scrap(source io.Reader, target *SplitedArticle, lang string) {
 	doc, err := goquery.NewDocumentFromReader(source)
 	if err != nil {
-		log.Println("Parsing Medium html: ", err.Error())
+		log.Println("Parsing "+lang+" Medium html: ", err.Error())
 		return
 	}
 
-	h3s := doc.Find("h3")
+	var titles *goquery.Selection
+	if lang == "en" {
+		titles = doc.Find("h4").Slice(0, 4)
+	} else {
+		titles = doc.Find("h3")
+	}
 	for i, v := range target.Digests {
-		prevName := h3s.FilterFunction(func(_ int, sel *goquery.Selection) bool {
+		prevName := titles.FilterFunction(func(_ int, sel *goquery.Selection) bool {
 			h, err := sel.Children().Children().Html()
 			if err != nil {
-				log.Println("Failed to read HTML: ", err.Error())
+				log.Println("Failed to read "+lang+" HTML Title: ", err.Error())
 			}
 			return h == v.title
 		}).Prev().AttrOr("name", "")

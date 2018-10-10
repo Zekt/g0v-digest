@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/xml"
+	"fmt"
 	_ "github.com/lib/pq"
 	"log"
 	"time"
@@ -65,14 +66,13 @@ func StoreArticle(article Article, callback func()) {
 	}
 }
 
-func GetArticle() (Article, error) {
+func GetArticle(lang string, offset int) (Article, error) {
 	var article Article
-	statement := `
-	SELECT title, pubtime, lang, html, url
+	statement := fmt.Sprintf(`SELECT title, pubtime, lang, html, url
 	FROM article
-	WHERE lang='zh'
+	WHERE lang='%s'
 	ORDER BY pubtime DESC
-	`
+	OFFSET %v`, lang, offset)
 	r := DB.QueryRow(statement)
 	err := r.Scan(
 		&article.Title,

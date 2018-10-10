@@ -50,7 +50,7 @@ func RouteMedium(sub *mux.Router) {
 					client := &http.Client{}
 					req, err := http.NewRequest(
 						"PUT",
-						fmt.Sprintf("http://%s:%d/mailchimp", config.Server, config.Port),
+						fmt.Sprintf("http://%s:%d/mailchimp?lang=%s", config.Server, config.Port, article.Language),
 						nil,
 					)
 					if err != nil {
@@ -101,6 +101,7 @@ func RouteAPI(sub *mux.Router) {
 
 func RouteMailchimp(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		lang := req.FormValue("lang")
 		client := &http.Client{}
 		var reqJson struct {
 			Template struct {
@@ -111,12 +112,12 @@ func RouteMailchimp(sub *mux.Router) {
 
 		sections := make(map[string]string)
 
-		article, err := GetArticle()
+		article, err := GetArticle(lang, 0)
 		if err != nil {
 			log.Println("Querying latest article: ", err.Error())
 			return
 		}
-		parsedArticle, err := Parse(strings.NewReader(article.Html))
+		parsedArticle, err := Parse(strings.NewReader(article.Html), "zh")
 		if err != nil {
 			log.Println("Parsing error")
 			return
@@ -134,7 +135,7 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 
-		Scrap(resMedium.Body, &parsedArticle)
+		Scrap(resMedium.Body, &parsedArticle, "zh")
 
 		t := article.PubTime
 		sections["date"] = fmt.Sprintf("%s %d WEEKLY NEWS", t.Month().String()[:3], t.Day())
