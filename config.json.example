@@ -10,6 +10,8 @@
   "mailchimpUrl": "https://us18.api.mailchimp.com/3.0",
   "campaignId": "",
   "templateId": 0,
+  "templateId_en": 0,
   "listId": "",
+  "listId_en": "",
   "apiKey": ""
 }

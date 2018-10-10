@@ -117,7 +117,7 @@ func RouteMailchimp(sub *mux.Router) {
 			log.Println("Querying latest article: ", err.Error())
 			return
 		}
-		parsedArticle, err := Parse(strings.NewReader(article.Html), "zh")
+		parsedArticle, err := Parse(strings.NewReader(article.Html), lang)
 		if err != nil {
 			log.Println("Parsing error")
 			return
@@ -135,18 +135,26 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 
-		Scrap(resMedium.Body, &parsedArticle, "zh")
+		Scrap(resMedium.Body, &parsedArticle, lang)
 
 		t := article.PubTime
 		sections["date"] = fmt.Sprintf("%s %d WEEKLY NEWS", t.Month().String()[:3], t.Day())
-		sections["link"] = fmt.Sprintf("<a href=\"%s\">%s</a>", article.Url, "一 週 公 民 科 技 焦 點")
+		if lang == "en" {
+			sections["link"] = fmt.Sprintf("<a href=\"%s\">%s</a>", article.Url, "This Week on Civic Tech")
+		} else {
+			sections["link"] = fmt.Sprintf("<a href=\"%s\">%s</a>", article.Url, "一 週 公 民 科 技 焦 點")
+		}
 		for i, v := range parsedArticle.Digests {
 			s := strconv.Itoa(i + 1)
 			sections["title"+s] = fmt.Sprintf("<a href=\"%s#%s\">%s</a>", article.Url, v.pos, v.title)
 			sections["content"+s] = v.content
 		}
 
-		reqJson.Template.ID = config.TempId
+		if lang == "en" {
+			reqJson.Template.ID = config.TempIdEn
+		} else {
+			reqJson.Template.ID = config.TempId
+		}
 		reqJson.Template.Sections = sections
 
 		jsonBytes, err := json.Marshal(reqJson)

@@ -110,8 +110,11 @@ func Scrap(source io.Reader, target *SplitedArticle, lang string) {
 	for i, v := range target.Digests {
 		prevName := titles.FilterFunction(func(_ int, sel *goquery.Selection) bool {
 			h, err := sel.Children().Children().Html()
-			if err != nil {
-				log.Println("Failed to read "+lang+" HTML Title: ", err.Error())
+			if h == "" || err != nil {
+				h, err = sel.Children().Html()
+				if err != nil {
+					log.Println("Failed to read "+lang+" HTML Title: ", err.Error())
+				}
 			}
 			return h == v.title
 		}).Prev().AttrOr("name", "")

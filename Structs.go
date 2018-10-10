@@ -6,19 +6,21 @@ import (
 )
 
 var config struct {
-	Server  string `json:"server"`
-	Port    int    `json:"port"`
-	SQLHost string `json:"sqlHost"`
-	SQLPort int    `json:"sqlPort"`
-	SQLUser string `json:"sqlUser"`
-	SQLPass string `json:"sqlPass"`
-	DBName  string `json:"dbname"`
-	RssUrl  string `json:"rssUrl"`
-	CampId  string `json:"campaignId"`
-	TempId  int    `json:"templateId"`
-	ListId  string `json:"listId"`
-	ApiUrl  string `json:"mailchimpUrl"`
-	ApiKey  string `json:"apiKey"`
+	Server   string `json:"server"`
+	Port     int    `json:"port"`
+	SQLHost  string `json:"sqlHost"`
+	SQLPort  int    `json:"sqlPort"`
+	SQLUser  string `json:"sqlUser"`
+	SQLPass  string `json:"sqlPass"`
+	DBName   string `json:"dbname"`
+	RssUrl   string `json:"rssUrl"`
+	CampId   string `json:"campaignId"`
+	TempId   int    `json:"templateId"`
+	TempIdEn int    `json:"templateId_en"`
+	ListId   string `json:"listId"`
+	ListIdEn string `json:"listId_en"`
+	ApiUrl   string `json:"mailchimpUrl"`
+	ApiKey   string `json:"apiKey"`
 }
 
 type Article struct {
