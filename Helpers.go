@@ -28,7 +28,7 @@ func NewMailchimpRequest(methods string, resource string, body []byte) (*http.Re
 	return req, err
 }
 
-func NewCampaignRequest(title string) (*http.Request, error) {
+func NewCampaignRequest(title, lang string) (*http.Request, error) {
 	var campaign struct {
 		Type       string `json:"type"`
 		Recipients struct {
@@ -44,12 +44,17 @@ func NewCampaignRequest(title string) (*http.Request, error) {
 	}
 
 	campaign.Type = "regular"
-	campaign.Recipients.ListId = config.ListId
 	campaign.Settings.Subject = title
 	campaign.Settings.Title = title
-	campaign.Settings.FromName = "g0v.news 團隊"
+	campaign.Settings.FromName = "g0v.news"
 	campaign.Settings.ReplyTo = "g0v.news@ocf.tw"
-	campaign.Settings.TempId = config.TempId
+	if lang == "en" {
+		campaign.Settings.TempId = config.TempIdEn
+		campaign.Recipients.ListId = config.ListIdEn
+	} else {
+		campaign.Settings.TempId = config.TempId
+		campaign.Recipients.ListId = config.ListId
+	}
 
 	jsonBytes, err := json.Marshal(campaign)
 	if err != nil {

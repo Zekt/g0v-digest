@@ -164,7 +164,7 @@ func RouteMailchimp(sub *mux.Router) {
 		}
 
 		// POST to creat a new campaign and get that campaign ID.
-		reqCamp, err := NewCampaignRequest(article.Title)
+		reqCamp, err := NewCampaignRequest(article.Title, lang)
 		if err != nil {
 			log.Println("Building request to create new campaign: ", err.Error())
 			return
