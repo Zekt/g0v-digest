@@ -42,7 +42,7 @@ type Response struct {
 
 var Url = "https://api.telegram.org/bot/"
 var Client = &http.Client{}
-var WhiteList = []int{1}
+var WhiteList = []int{}
 
 func main() {
 
@@ -60,13 +60,17 @@ func main() {
 			continue
 		}
 		for _, v := range response.Result {
-			offset = v.UpdateID
+			offset = v.UpdateID + 1
 			for _, id := range WhiteList {
 				if v.Message.From.ID == id {
 					goto pass
 				}
 			}
 			log.Println("Not in whitelist.")
+			_, err = sendMessage(v.Message.Chat.ID, "You are not authorized.", v.Message.MessageID)
+			if err != nil {
+				log.Println("Error replying message: ", err.Error())
+			}
 			continue
 		pass:
 			if v.Message.MessageID > count {
