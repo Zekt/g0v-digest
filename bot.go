@@ -61,6 +61,14 @@ func main() {
 		}
 		for _, v := range response.Result {
 			offset = v.UpdateID
+			for _, id := range WhiteList {
+				if v.Message.From.ID == id {
+					goto pass
+				}
+			}
+			log.Println("Not in whitelist.")
+			continue
+		pass:
 			if v.Message.MessageID > count {
 				count = v.Message.MessageID
 				if v.Message.Text == "/update_zh" || v.Message.Text == "/update_zh@g0vDigestBot" {
@@ -94,7 +102,7 @@ func main() {
 				}
 			}
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -129,11 +137,13 @@ func ReadRes(req *http.Request) (*Response, error) {
 	}
 	var response Response
 	err = json.Unmarshal(resBytes, &response)
+	//log.Println(string(resBytes))
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintf("Error unmarshalling JSON response: ", err.Error()))
 	}
 	if response.Ok == false {
 		return nil, fmt.Errorf(fmt.Sprintf("Error: API response not ok."))
+		time.Sleep(time.Minute)
 	}
 	return &response, nil
 }
