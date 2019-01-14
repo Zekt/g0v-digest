@@ -126,3 +126,20 @@ func Scrap(source io.Reader, target *SplitedArticle, lang string) {
 		target.Digests[i].pos = prevName
 	}
 }
+
+func RemovePixel(source io.Reader) (string, error) {
+	doc, err := goquery.NewDocumentFromReader(source)
+	if err != nil {
+		log.Println("Error parsing html: ", err.Error())
+	}
+
+	nodes := doc.Find("img")
+	nodes.Each(func(index int, node *goquery.Selection) {
+		val, exist := node.Attr("width")
+		if exist == true && val == "1" {
+			node.Remove()
+		}
+	})
+
+	return doc.Html()
+}

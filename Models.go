@@ -6,6 +6,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -116,13 +117,17 @@ func GetNewestXML() ([]byte, error) {
 			&subxml.Html.Html,
 			&subxml.Url,
 		)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		subxml.Html.Html, err = RemovePixel(strings.NewReader(subxml.Html.Html))
+		if err != nil {
+			log.Println(err.Error())
+		}
 		subxml.Country = "TW"
 		subxml.StartTime = subxml.PubTime
 		subxml.EndTime = 2000000000000
 		subxml.Category = "digest"
-		if err != nil {
-			log.Println(err.Error())
-		}
 		line.Articles = append(line.Articles, subxml)
 	}
 
