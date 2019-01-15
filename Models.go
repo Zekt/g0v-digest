@@ -96,7 +96,7 @@ func GetNewestXML() ([]byte, error) {
 	}
 
 	statement := `
-	SELECT id, title, lang, (extract(epoch from pubtime)*1000)::bigint, html, url
+	SELECT id, title, lang, (extract(epoch from pubtime)*1000)::bigint, (extract(epoch from updatetime)*1000)::bigint, html, url
 	FROM article
 	WHERE pubtime <= to_timestamp(($1))
 	AND lang='zh'
@@ -114,6 +114,7 @@ func GetNewestXML() ([]byte, error) {
 			&subxml.Title,
 			&subxml.Language,
 			&subxml.PubTime,
+			&subxml.UpdateTime,
 			&subxml.Html.Html,
 			&subxml.Url,
 		)
