@@ -84,7 +84,14 @@ func RouteAPI(sub *mux.Router) {
 	})
 	sub.HandleFunc("/line", func(res http.ResponseWriter, req *http.Request) {
 		// Retuen XML for LINE Today
-		rss, err := GetNewestXML()
+		var rss []byte
+		var err error
+		lang := req.FormValue("lang")
+		if lang == "en" {
+			rss, err = GetNewestXML("en")
+		} else {
+			rss, err = GetNewestXML("zh")
+		}
 		if err != nil {
 			log.Println(err.Error())
 			res.WriteHeader(http.StatusBadRequest)
@@ -98,7 +105,8 @@ func RouteAPI(sub *mux.Router) {
 		res.WriteHeader(http.StatusNotFound)
 		//TODO: return JSON, error not handled.
 		client := &http.Client{}
-		url := fmt.Sprintf("http://%s:%d/api/line", config.Server, config.Port)
+		lang := req.FormValue("lang")
+		url := fmt.Sprintf("http://%s:%d/api/line?lang=%s", config.Server, config.Port, lang)
 		reqLocal, _ := http.NewRequest("GET", url, nil)
 		resLocal, _ := client.Do(reqLocal)
 		bytes, err := xj.Convert(resLocal.Body)

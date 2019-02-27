@@ -85,7 +85,7 @@ func GetArticle(lang string, offset int) (Article, error) {
 	return article, err
 }
 
-func GetNewestXML() ([]byte, error) {
+func GetNewestXML(lang string) ([]byte, error) {
 	var line LineXML
 	r := DB.QueryRow(`
 	SELECT id, (extract(epoch from time)*1000)::bigint
@@ -102,6 +102,17 @@ func GetNewestXML() ([]byte, error) {
 	AND lang='zh'
 	ORDER BY pubtime DESC
 	`
+
+	if lang == "en" {
+		statement = `
+	SELECT id, title, lang, (extract(epoch from pubtime)*1000)::bigint, (extract(epoch from updatetime)*1000)::bigint, html, url
+	FROM article
+	WHERE pubtime <= to_timestamp(($1))
+	AND lang='en'
+	ORDER BY pubtime DESC
+	`
+	}
+
 	rs, err := DB.Query(statement, line.Time)
 	if err != nil {
 		return nil, err
