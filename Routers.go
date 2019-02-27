@@ -5,6 +5,7 @@ import (
 	"fmt"
 	// "bytes"
 	"encoding/json"
+	xj "github.com/basgys/goxml2json"
 	"github.com/gorilla/mux"
 	"github.com/mmcdole/gofeed"
 	"io/ioutil"
@@ -95,7 +96,16 @@ func RouteAPI(sub *mux.Router) {
 
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNotFound)
-		//TODO: return JSON
+		//TODO: return JSON, error not handled.
+		client := &http.Client{}
+		url := fmt.Sprintf("http://%s:%d/api/line", config.Server, config.Port)
+		reqLocal, _ := http.NewRequest("GET", url, nil)
+		resLocal, _ := client.Do(reqLocal)
+		bytes, err := xj.Convert(resLocal.Body)
+		if err != nil {
+			log.Println("Converting to json failed: ", err.Error())
+		}
+		res.Write(bytes.Bytes())
 	})
 }
 
