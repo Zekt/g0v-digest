@@ -15,13 +15,14 @@ var DB *sql.DB
 func StoreArticle(article Article, callback func()) {
 	statement := `
 	INSERT INTO article
-	(title, lang, pubtime, html, url)
-	VALUES ($1, $2, $3, $4, $5)
+	(title, lang, pubtime, updatetime, html, url)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	_, err := DB.Exec(statement,
 		article.Title,
 		article.Language,
 		article.PubTime,
+		time.Now(),
 		article.Html,
 		article.Url,
 	)
