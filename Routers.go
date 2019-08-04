@@ -14,7 +14,73 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
+
+func RouteWordpress(sub *mux.Router) {
+	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		resMessage := "Done parsing from Wordpress."
+		client := &http.Client{}
+		reqJson := make(map[string]interface{})
+
+		reqWordpress, err := http.NewRequest("GET", config.WordpressUrl, nil)
+		if err != nil {
+			log.Println("Building request to Wordpress failed: ", err.Error())
+			return
+		}
+		q := reqWordpress.URL.Query()
+		q.Add("fileds", "ID,date,title,URL,content,excerpt,tags")
+		q.Add("tag", "DIGEST")
+		reqWordpress.URL.RawQuery = q.Encode()
+
+		resWordpress, err := client.Do(reqWordpress)
+		if err != nil {
+			log.Println("Making request to Wordpress failed: ", err.Error())
+			return
+		}
+
+		resBody, err := ioutil.ReadAll(resWordpress.Body)
+		if err != nil {
+			log.Println("Reading Wordpress response failed: ", err.Error())
+			return
+		}
+
+		err = json.Unmarshal(resBody, &reqJson)
+		if err != nil {
+			log.Println("Parsing Wordpress response in JSON failed: ", err.Error())
+			return
+		}
+
+		if val, ok := reqJson["posts"]; ok {
+			for _, v := range val.([]interface{}) {
+				v := v.(map[string]interface{})
+				pub, err := time.Parse(time.RFC3339, v["date"].(string))
+				if err != nil {
+					log.Println("Error parsing time: ", err.Error())
+				}
+				article := Article{
+					Title:   v["title"].(string),
+					PubTime: pub,
+					Url:     v["URL"].(string),
+					Html:    v["content"].(string),
+				}
+				if val, ok := v["tags"].(map[string]interface{}); ok {
+					for k, _ := range val {
+						article.Tags = append(article.Tags, k)
+					}
+					if StringInSlice("中文", article.Tags) {
+						article.Language = "zh"
+					}
+				}
+				StoreArticle(article, func() {})
+			}
+		} else {
+			log.Println("No \"posts\" field found.")
+		}
+
+		res.Write([]byte(resMessage))
+	})
+}
 
 func RouteMedium(sub *mux.Router) {
 	sub.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {

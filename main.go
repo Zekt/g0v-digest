@@ -41,10 +41,12 @@ func main() {
 		Handler: router,
 	}
 
+	subWordpress := router.PathPrefix("/wordpress").Methods("PUT").Subrouter().StrictSlash(true)
 	subMedium := router.PathPrefix("/medium").Methods("PUT").Subrouter().StrictSlash(true)
 	subAPI := router.PathPrefix("/api").Subrouter().StrictSlash(true)
 	subMailchimp := router.PathPrefix("/mailchimp").Subrouter().StrictSlash(true)
 
+	RouteWordpress(subWordpress)
 	RouteMedium(subMedium)
 	RouteAPI(subAPI)
 	RouteMailchimp(subMailchimp)
