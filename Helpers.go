@@ -65,6 +65,7 @@ func NewCampaignRequest(title, lang string) (*http.Request, error) {
 	return req, err
 }
 
+//Main parser from HTML to mailchimp template.
 func Parse(source io.Reader, lang string) (SplitedArticle, error) {
 	doc, err := goquery.NewDocumentFromReader(source)
 	if err != nil {
@@ -99,6 +100,7 @@ func Parse(source io.Reader, lang string) (SplitedArticle, error) {
 	return digest, err
 }
 
+//DEPRECATED: Scrap section id from Medium Source.
 func Scrap(source io.Reader, target *SplitedArticle, lang string) {
 	doc, err := goquery.NewDocumentFromReader(source)
 	if err != nil {

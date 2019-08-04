@@ -72,7 +72,24 @@ func RouteWordpress(sub *mux.Router) {
 						article.Language = "zh"
 					}
 				}
-				StoreArticle(article, func() {})
+				StoreArticle(article, func() {
+					client := &http.Client{}
+					req, err := http.NewRequest(
+						"PUT",
+						fmt.Sprintf("http://%s:%d/mailchimp?lang=%s", config.Server, config.Port, article.Language),
+						nil,
+					)
+					if err != nil {
+						log.Println("Building request to Mailchimp on update from Medium: ", err.Error())
+						return
+					}
+					_, err = client.Do(req)
+					if err != nil {
+						log.Println("Sending request to Mailchimp on update from Wordpress: ", err.Error())
+						return
+					}
+					resMessage += "\nMailchimp content updated."
+				})
 			}
 		} else {
 			log.Println("No \"posts\" field found.")
@@ -207,19 +224,21 @@ func RouteMailchimp(sub *mux.Router) {
 			return
 		}
 
-		reqMedium, err := http.NewRequest("GET", article.Url, nil)
-		if err != nil {
-			log.Println("Building request to Medium failed: ", err.Error())
-			return
-		}
+		/*
+			reqMedium, err := http.NewRequest("GET", article.Url, nil)
+			if err != nil {
+				log.Println("Building request to Medium failed: ", err.Error())
+				return
+			}
 
-		resMedium, err := client.Do(reqMedium)
-		if err != nil {
-			log.Println("Making request to Medium failed: ", err.Error())
-			return
-		}
+			resMedium, err := client.Do(reqMedium)
+			if err != nil {
+				log.Println("Making request to Medium failed: ", err.Error())
+				return
+			}
 
-		Scrap(resMedium.Body, &parsedArticle, lang)
+			Scrap(resMedium.Body, &parsedArticle, lang)
+		*/
 
 		t := article.PubTime
 		sections["date"] = fmt.Sprintf("%s %d WEEKLY NEWS", t.Month().String()[:3], t.Day())
