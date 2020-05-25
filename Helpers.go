@@ -46,8 +46,8 @@ func NewCampaignRequest(title, lang string) (*http.Request, error) {
 	campaign.Type = "regular"
 	campaign.Settings.Subject = title
 	campaign.Settings.Title = title
-	campaign.Settings.FromName = "g0v.news"
-	campaign.Settings.ReplyTo = "g0v.news@ocf.tw"
+	campaign.Settings.FromName = "OCF Lab"
+	campaign.Settings.ReplyTo = "hi@ocf.tw"
 	if lang == "en" {
 		campaign.Settings.TempId = config.TempIdEn
 		campaign.Recipients.ListId = config.ListIdEn
