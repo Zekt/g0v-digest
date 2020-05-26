@@ -40,9 +40,9 @@ type Response struct {
 	} `json:"result"`
 }
 
-var Url = "https://api.telegram.org/bot/"
+var Url = "https://api.telegram.org/bot675702975:AAH8sEPLFgfVe50hXkFqWQXVYAHelXE-7qc/"
 var Client = &http.Client{}
-var WhiteList = []int{}
+var WhiteList = []int{135263559,130325609}
 
 func main() {
 
@@ -111,7 +111,7 @@ func main() {
 }
 
 func Update(lang string) error {
-	port := 8787
+	port := 8080
 	client := &http.Client{}
 	url := "http://localhost"
 	req, err := http.NewRequest("PUT", url+":"+strconv.Itoa(port)+"/mailchimp?lang="+lang, nil)
@@ -141,7 +141,10 @@ func ReadRes(req *http.Request) (*Response, error) {
 	}
 	var response Response
 	err = json.Unmarshal(resBytes, &response)
-	//log.Println(string(resBytes))
+	if len(response.Result) > 0 {
+		log.Println(string(resBytes))
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintf("Error unmarshalling JSON response: ", err.Error()))
 	}
